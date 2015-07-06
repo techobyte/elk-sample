@@ -322,11 +322,18 @@ $ nano /etc/logstash-forwarder.conf
 }
 ```
 
-  Restart service
-  ```sh
-  $ sudo service logstash-forwarder restart
-  ```
+Restart service
+```sh
+$ sudo service logstash-forwarder restart
+```
+### Installing Kibana
+* Install just like single node
+* Configure with ELB_IP_URL
+* Add Reverse proxy to Kibana
 
+## References
+* https://www.digitalocean.com/community/tutorials/how-to-install-elasticsearch-logstash-and-kibana-4-on-ubuntu-14-04
+* http://www.itzgeek.com/how-tos/linux/centos-how-tos/how-to-install-elasticsearch-logstash-and-kibana-4-on-centos-7-rhel-7.html
 [Elasticsearch]:https://www.elastic.co/products/elasticsearch
 [Logstash]:https://www.elastic.co/products/logstash
 [Kibana]:https://www.elastic.co/products/kibana
