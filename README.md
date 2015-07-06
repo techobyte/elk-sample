@@ -35,6 +35,9 @@ $ sudo service elasticsearch restart
 $ sudo update-rc.d elasticsearch defaults 95 10
 ```
 * Test ```curl -X GET http://localhost:9200```
+  * Browse to http://localhost:9200/
+  * Plugin Browse to http://localhost:9200/_plugin/head
+  * Plugin Browse to http://localhost:9200/_plugin/bigdesk
 
 #### Using tar.gz
 * Untar it to /opt
@@ -55,6 +58,10 @@ $ sudo /opt/elasticsearch-1.6.0/bin/plugin -install lukas-vlcek/bigdesk
 ```sh
 $ sudo nohup /opt/elasticsearch-1.6.0/bin/elasticsearch start
 ```
+* Test ```curl -X GET http://localhost:9200```
+  * Browse to http://localhost:9200/
+  * Plugin Browse to http://localhost:9200/_plugin/head
+  * Plugin Browse to http://localhost:9200/_plugin/bigdesk
 
 ### Installing Logstash
 #### Using apt-get
@@ -166,7 +173,11 @@ discovery.ec2.tag.Name: "elk-sample - Elasticsearch"
 http.cors.enabled: true
 http.cors.allow-origin: "*"
 ```
-* Add all the Elasticsearch nodes into Loadbalancer and get the IP of load balancer [>>ELB_IP_URL<<]
+* Add all the Elasticsearch nodes into Loadbalancer and get the IP of load balancer [>>**ELB_IP_URL**<<]
+* Test ```curl -X GET http://ELB_IP_URL:9200```
+  * Browse to http://ELB_IP_URL:9200/
+  * Plugin Browse to http://ELB_IP_URL:9200/_plugin/head
+  * Plugin Browse to http://ELB_IP_URL:9200/_plugin/bigdesk
 
 ### Installing Logstash
 * Install same as single node
