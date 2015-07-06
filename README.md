@@ -48,8 +48,8 @@ network.host: localhost
 ```
 * Configure: Adding plugins
 ```sh
-$ . /opt/elasticsearch-1.6.0/bin/plugin -install mobz/elasticsearch-head
-$ . /opt/elasticsearch-1.6.0/bin/plugin -install lukas-vlcek/bigdesk
+$ sudo . /opt/elasticsearch-1.6.0/bin/plugin -install mobz/elasticsearch-head
+$ sudo . /opt/elasticsearch-1.6.0/bin/plugin -install lukas-vlcek/bigdesk
 ```
 * Start
 ```sh
@@ -61,6 +61,7 @@ $ sudo nohup . /opt/elasticsearch-1.6.0/bin/elasticsearch start
 * AWS a/c
 * 4 EC2 Instances with Ubuntu 14.04
 * JAVA 7 on all
+* Load Balancer
 
 ### Architecture
 ```sh
@@ -76,6 +77,23 @@ ____                    ^       ^
   |__|      +-----+      +-----+      +-----+
  LOGs       Logstash    LoadBalancer   Kibana
 ```
+
+### Installing Elasticsearch
+* Install same as single node
+* Configure for inter-communication
+```sh
+$ sudo . /opt/elasticsearch-1.6.0/bin/plugin install elasticsearch/elasticsearch-cloud-aws/2.6.0
+$ sudo nano /opt/elasticsearch-1.6.0/config/elasticsearch.yml
+cluster.name: elk-sample
+cloud.aws.access_key: ACCESS_KEY_HERE
+cloud.aws.secret_key: SECRET_KEY_HERE
+cloud.aws.region: us-east-1
+discovery.type: ec2
+discovery.ec2.tag.Name: "elk-sample - Elasticsearch"
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+```
+* Add all the Elasticsearch nodes into Loadbalancer and get the IP of load balancer [ELB_IP]
 
 [Elasticsearch]:https://www.elastic.co/products/elasticsearch
 [Logstash]:https://www.elastic.co/products/logstash
