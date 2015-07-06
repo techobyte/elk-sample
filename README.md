@@ -135,6 +135,29 @@ output {
 ```sh
 $ sudo /opt/logstash-1.5.2/bin/logstash -f logstash.conf
 ```
+
+### Installing Kibana
+* Download & Exract OS specifi Kibana to home directory
+```sh
+$ cd ~; wget https://download.elastic.co/kibana/kibana/kibana-4.1.1-linux-x64.tar.gz
+$ tar -xzf kibana-*.tar.gz -C /opt
+```
+* Configure
+```sh
+$ sudo nano /opt/kibana-4*/config/kibana.yml
+host: "localhost"
+```
+* Start
+```sh
+$ sudo /opt/kibana-4*/bin/kibana
+```
+* Run as a Service
+```sh
+$ cd /etc/init.d && sudo wget https://gist.githubusercontent.com/thisismitch/8b15ac909aed214ad04a/raw/bce61d85643c2dcdfbc2728c55a41dab444dca20/kibana4
+$ sudo chmod +x /etc/init.d/kibana4
+$ sudo update-rc.d kibana4 defaults 96 9
+$ sudo service kibana4 start
+```
 ===
 ## Multi Server Stack/Architecture
 ### Pre-requisite
