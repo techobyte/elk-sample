@@ -145,17 +145,18 @@ $ sudo /opt/logstash-1.5.2/bin/logstash -f logstash.conf
 
 ### Architecture
 ```sh
-                     +-----+ +-----+         
-                     |     | |     |         
-                     | ES1 | | ES2 |         
-                     +-----+ +-----+  ....     
-____                    ^       ^            
-|==|                     \     /              
-|=_|__      +-----+      ++---++      +-----+
-|_|==| +--> |     | +--> |     | +--> |     |
-  |==|      | LS  |      | ELB |      | KIB |
-  |__|      +-----+      +-----+      +-----+
- LOGs       Logstash    LoadBalancer   Kibana
+                                 +-----+ +-----+         
+                                 |     | |     |         
+                                 | ES1 | | ES2 |         
+                                 +-----+ +-----+  ....     
+____                                ^       ^            
+|==|        +----+                   \     /              
+|=_|__ +--> |LSF |      +-----+      ++---++      +-----+
+|_|==|      +----+ +--> |     | +--> |     | +--> |     |
+  |==| +--> +----+ +--> | LS  |      | ELB |      | KIB |
+  |__|      |LSF |      +-----+      +-----+      +-----+
+            +----+                                       
+ LOGs     LogstashFwdr  Logstash    LoadBalancer   Kibana
 ```
 
 ### Installing Elasticsearch
@@ -193,7 +194,115 @@ output {
   }
 }
 ```
-* Add Logstash forwarder on all required machines
+* Configuring SSL
+  * Generate SSL certs Option 1: (Hostname FQDN)
+
+    Before creating a certificate, make sure you have A record for logstash server; ensure that client servers are able to resolve the hostname of the logstash server. If you do not have DNS, kindly add the host entry for logstash server; where 10.0.0.26 is the ip address of logstash server and mylogstash is the hostname of your logstash server.
+ 
+    ```sh
+    $ nano /etc/hosts
+    10.0.0.26 mylogstash
+    ```
+
+    Create a SSl certificate.  
+    Goto OpenSSL directory.  
+
+    ```sh
+    $ cd /etc/pki/tls
+    ```
+
+    Execute the following command to create a SSL certificate, replace with your real logstash server.  
+
+    ```sh
+    $ openssl req -x509 -nodes -newkey rsa:2048 -days 365 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt -subj /CN=mylogstash
+    ```
+  * Generate SSL certs Option 2: (IP Address)
+
+    Before creating a SSL certificate, we would require to an add ip address of logstash server to SubjectAltName in the OpenSSL config file.
+
+    Goto “[ v3_ca ]” section and replace with your logstash server ip.  
+
+    ```sh
+    $ nano /etc/pki/tls/openssl.cnf
+    subjectAltName = IP:10.0.0.26
+    ```
+
+    Goto OpenSSL directory.  
+
+    ```sh
+    $ cd /etc/pki/tls
+    ```
+
+    Execute the following command to create a SSL certificate.  
+
+    ```sh
+    $ openssl req -x509 -days 365 -batch -nodes -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt
+    ```
+  * Add SSL to config
+
+    ```sh
+    $ sudo nano /etc/logstash/conf.d/logstash.conf
+    input {
+      lumberjack {
+        port => 5050
+        type => "logs"
+        ssl_certificate => "/etc/pki/tls/certs/logstash-forwarder.crt"
+        ssl_key => "/etc/pki/tls/private/logstash-forwarder.key"
+      }
+    }
+    ```
+
+### Installing Logstash-Forwarder
+#### Using apt-get
+* Ading source list
+```sh
+$ echo 'deb http://packages.elasticsearch.org/logstashforwarder/debian stable main' | sudo tee /etc/apt/sources.list.d/logstashforwarder.list
+$ wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add -
+$ sudo apt-get update
+```
+* Install
+```sh
+$ sudo apt-get install logstash-forwarder
+```
+#### Using binaries
+* Download OS specific binaries
+* Install it
+
+#### Configure the SSL
+
+Logstash-forwader uses SSL certificate for validating logstash server identity, so copy the logstash-forwarder.crt that we created earlier from the logstash server to the client.
+  
+In the “network” section, mention the logstash server with port number and path to the logstash-forwarder certificate that you copied from logstash server. This section defines the logstash-forwarder to send a logs to logstash server “mylogstash” on port 5050 and client validates the server identity with the help of SSL certificate.
+  
+```sh
+$ nano /etc/logstash-forwarder.conf
+{
+  "network": {
+    "servers": [ "mylogstash:5050" ],
+    "ssl ca": "/etc/pki/tls/certs/logstash-forwarder.crt",
+    "timeout": 15
+  },
+  "files": [
+    {
+      "paths": [
+        "/var/log/syslog",
+        "/var/log/auth.log"
+      ],
+      "fields": { "type": "syslog" }
+    }, {
+      "paths": [
+        "/var/log/apache/httpd-*.log"
+      ],
+      "fields": { "type": "apache" }
+    }
+  ]
+}
+```
+
+  Restart service
+  ```sh
+  $ sudo service logstash-forwarder restart
+  ```
 
 [Elasticsearch]:https://www.elastic.co/products/elasticsearch
 [Logstash]:https://www.elastic.co/products/logstash
