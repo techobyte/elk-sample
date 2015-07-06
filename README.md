@@ -39,7 +39,7 @@ $ sudo update-rc.d elasticsearch defaults 95 10
 #### Using tar.gz
 * Untar it to /opt
 ```sh
-$ tar -xzf elasticsearch-1.6.0.tar.gz -O /opt
+$ tar -xzf elasticsearch-1.6.0.tar.gz -C /opt
 ```
 * Configure: Restrict outside access
 ```sh
@@ -48,14 +48,87 @@ network.host: localhost
 ```
 * Configure: Adding plugins
 ```sh
-$ sudo . /opt/elasticsearch-1.6.0/bin/plugin -install mobz/elasticsearch-head
-$ sudo . /opt/elasticsearch-1.6.0/bin/plugin -install lukas-vlcek/bigdesk
+$ sudo /opt/elasticsearch-1.6.0/bin/plugin -install mobz/elasticsearch-head
+$ sudo /opt/elasticsearch-1.6.0/bin/plugin -install lukas-vlcek/bigdesk
 ```
 * Start
 ```sh
-$ sudo nohup . /opt/elasticsearch-1.6.0/bin/elasticsearch start
+$ sudo nohup /opt/elasticsearch-1.6.0/bin/elasticsearch start
 ```
 
+### Installing Logstash
+#### Using apt-get
+* Adding source list
+```sh
+$ echo 'deb http://packages.elasticsearch.org/logstash/1.5/debian stable main' | sudo tee /etc/apt/sources.list.d/logstash.list
+$ sudo apt-get update
+```
+* Install
+```sh
+$ sudo apt-get install logstash
+```
+* Configure
+```sh
+$ sudo nano /etc/logstash/conf.d/logstash.conf
+input {
+  file {
+    path => "/var/log/apache/access.log"
+    type => "apache"
+  }
+
+  file {
+    path => "/tmp/testing.log"
+    type => "custom"
+  }
+}
+
+output {
+  elasticsearch {
+    action => "index"
+    host => "localhost"
+    index => "logs"
+    protocol => "http"
+  }
+}
+```
+* Start
+```sh
+$ sudo service logstash restart
+```
+#### Using tar.gz
+* Extract
+```sh
+$ tar -xzf logstash-1.5.2.tar.gz -C /opt
+```
+* Configure
+```sh
+$ sudo nano /opt/logstash-1.5.2/bin/logstash.conf
+input {
+  file {
+    path => "/var/log/apache/access.log"
+    type => "apache"
+  }
+
+  file {
+    path => "/tmp/testing.log"
+    type => "custom"
+  }
+}
+
+output {
+  elasticsearch {
+    action => "index"
+    host => "localhost"
+    index => "logs"
+    protocol => "http"
+  }
+}
+```
+* Start
+```sh
+$ sudo /opt/logstash-1.5.2/bin/logstash -f logstash.conf
+```
+===
 ## Multi Server Stack/Architecture
 ### Pre-requisite
 * AWS a/c
@@ -93,7 +166,23 @@ discovery.ec2.tag.Name: "elk-sample - Elasticsearch"
 http.cors.enabled: true
 http.cors.allow-origin: "*"
 ```
-* Add all the Elasticsearch nodes into Loadbalancer and get the IP of load balancer [ELB_IP]
+* Add all the Elasticsearch nodes into Loadbalancer and get the IP of load balancer [>>ELB_IP_URL<<]
+
+### Installing Logstash
+* Install same as single node
+* Configure for communication to elasticsearch
+```sh
+...
+output {
+  elasticsearch {
+    action => "index"
+    host => ">>ELB_IP_URL<<"
+    index => "logs"
+    protocol => "http"
+  }
+}
+```
+* Add Logstash forwarder on all required machines
 
 [Elasticsearch]:https://www.elastic.co/products/elasticsearch
 [Logstash]:https://www.elastic.co/products/logstash
